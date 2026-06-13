@@ -51,7 +51,7 @@ dependencies:
   cross_file: ^0.3.5 #跨平台文件
   permission_handler: ^12.0.1 #权限处理
   image_gallery_saver_plus: ^4.0.1 #图片保存到相册
-  screen_brightness: ^2.1.7 #亮度控制
+  screen_brightness: 2.1.8 #亮度控制
   auto_orientation_v2: ^2.3.6 #屏幕方向
   wakelock_plus: ^1.4.0 #屏幕常亮
   file_picker: ^10.3.7 #文件选择
@@ -86,6 +86,10 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
   flutter_test:
     sdk: flutter
+
+dependency_overrides:
+  # 2.1.5 会拉取 kotlin-stdlib 2.3.21，与当前 Kotlin 2.1.0 不兼容。
+  screen_brightness_android: 2.1.4
 
 flutter_launcher_icons:
   android: true
