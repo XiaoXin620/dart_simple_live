@@ -140,16 +140,32 @@ class OtherSettingsController extends BaseController {
   }
 
   void saveLogFile(LogFileModel item) async {
-    var filePath = await FilePicker.platform.saveFile(
-      allowedExtensions: ['log'],
-      type: FileType.custom,
-      fileName: item.name,
-      bytes: Uint8List(0),
-    );
-    if (filePath != null) {
+    try {
+      await Log.flushWriter();
       var file = File(item.path);
-      await file.copy(filePath);
+      var inlineSave = Platform.isAndroid || Platform.isIOS || kIsWeb;
+      var payload = await buildLogSavePayload(file, inlineSave: inlineSave);
+
+      var filePath = await FilePicker.platform.saveFile(
+        allowedExtensions: ['log'],
+        type: FileType.custom,
+        fileName: item.name,
+        bytes: payload.bytes,
+      );
+
+      if (filePath == null && !kIsWeb) {
+        SmartDialog.showToast("保存取消");
+        return;
+      }
+
+      if (!inlineSave && filePath != null) {
+        await File(filePath).writeAsBytes(payload.sourceBytes);
+      }
+
       SmartDialog.showToast("保存成功");
+    } catch (e) {
+      Log.logPrint(e);
+      SmartDialog.showToast("保存失败:$e");
     }
   }
 
@@ -243,4 +259,25 @@ class LogFileModel {
   late DateTime time;
   late int size;
   LogFileModel(this.name, this.path, this.time, this.size);
+}
+
+class LogSavePayload {
+  final Uint8List sourceBytes;
+  final Uint8List? bytes;
+
+  LogSavePayload({
+    required this.sourceBytes,
+    required this.bytes,
+  });
+}
+
+Future<LogSavePayload> buildLogSavePayload(
+  File sourceFile, {
+  required bool inlineSave,
+}) async {
+  var sourceBytes = await sourceFile.readAsBytes();
+  return LogSavePayload(
+    sourceBytes: sourceBytes,
+    bytes: inlineSave ? sourceBytes : null,
+  );
 }
